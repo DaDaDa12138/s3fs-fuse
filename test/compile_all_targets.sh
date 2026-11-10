@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 #
 # s3fs - FUSE-based file system backed by Amazon S3
 #
@@ -19,11 +19,39 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-if [[ $EUID -ne 0 ]]
-then
-	echo "This test script must be run as root" 1>&2
-	exit 1
-fi
+set -o errexit
+set -o nounset
+set -o pipefail
+
+COMMON_FLAGS='-O -Wall -Werror'
+
+make clean
+CXXFLAGS="$COMMON_FLAGS" ./configure --with-gnutls
+make --jobs "$(nproc)"
+
+make clean
+CXXFLAGS="$COMMON_FLAGS" ./configure --with-gnutls --with-nettle
+make --jobs "$(nproc)"
+
+make clean
+CXXFLAGS="$COMMON_FLAGS" ./configure --with-nss
+make --jobs "$(nproc)"
+
+make clean
+CXXFLAGS="$COMMON_FLAGS" ./configure --with-openssl
+make --jobs "$(nproc)"
+
+make clean
+CXXFLAGS="$COMMON_FLAGS -std=c++23" ./configure
+make --jobs "$(nproc)"
+
+make clean
+CXXFLAGS="$COMMON_FLAGS -m32" ./configure
+make --jobs "$(nproc)"
+
+make clean
+CXX=clang++ CXXFLAGS="$COMMON_FLAGS -Wshorten-64-to-32" ./configure
+make --jobs "$(nproc)"
 
 #
 # Local variables:

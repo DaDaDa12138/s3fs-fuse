@@ -1,7 +1,7 @@
 /*
  * s3fs - FUSE-based file system backed by Amazon S3
  *
- * Copyright(C) 2007 Randy Rizun <rrizun@gmail.com>
+ * Copyright(C) 2021 Andrew Gaul <andrew@gaul.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,30 +18,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef S3FS_MVNODE_H_
-#define S3FS_MVNODE_H_
+// Generate junk data at high speed.  An alternative to dd if=/dev/urandom.
 
-//-------------------------------------------------------------------
-// Structure
-//-------------------------------------------------------------------
-typedef struct mvnode
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+
+int main(int argc, const char *argv[])
 {
-     char*          old_path;
-     char*          new_path;
-     bool           is_dir;
-     bool           is_normdir;
-     struct mvnode* prev;
-     struct mvnode* next;
-} MVNODE;
-
-//-------------------------------------------------------------------
-// Utility functions for moving objects
-//-------------------------------------------------------------------
-MVNODE *create_mvnode(const char *old_path, const char *new_path, bool is_dir, bool normdir = false);
-MVNODE *add_mvnode(MVNODE** head, MVNODE** tail, const char *old_path, const char *new_path, bool is_dir, bool normdir = false);
-void free_mvnodes(MVNODE *head);
-
-#endif // S3FS_MVNODE_H_
+    if (argc != 2) {
+        return 1;
+    }
+    uint64_t count = strtoull(argv[1], nullptr, 10);
+    char buf[128 * 1024];
+    for (uint64_t i = 0; i < count; i += sizeof(buf)) {
+        for (uint64_t j = 0; j < sizeof(buf) / sizeof(i); ++j) {
+            *(reinterpret_cast<uint64_t *>(buf) + j) = i / sizeof(i) + j;
+        }
+        fwrite(buf, 1, sizeof(buf) > count - i ? count - i : sizeof(buf), stdout);
+    }
+    return 0;
+}
 
 /*
 * Local variables:

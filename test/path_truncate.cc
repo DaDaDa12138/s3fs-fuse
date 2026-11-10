@@ -1,7 +1,7 @@
 /*
  * s3fs - FUSE-based file system backed by Amazon S3
  *
- * Copyright(C) 2007 Randy Rizun <rrizun@gmail.com>
+ * Copyright(C) 2026 Andrew Gaul <andrew@gaul.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,37 +18,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef S3FS_AUTOLOCK_H_
-#define S3FS_AUTOLOCK_H_
+#include <cstdio>
+#include <cstdlib>
+#include <unistd.h>
 
-#include <pthread.h>
-
-//-------------------------------------------------------------------
-// AutoLock Class
-//-------------------------------------------------------------------
-class AutoLock
+// [NOTE]
+// This program calls truncate(2) with a path, unlike the truncate
+// command which opens the file and calls ftruncate(2). The filesystem
+// receives the request without a file handle, and no file descriptor
+// is open for the file.
+//
+int main(int argc, const char *argv[])
 {
-    public:
-      enum Type {
-          NO_WAIT        = 1,
-          ALREADY_LOCKED = 2,
-          NONE           = 0
-      };
+    if(argc != 3){
+        fprintf(stderr, "[ERROR] Wrong parameters\n");
+        fprintf(stdout, "[Usage] path_truncate <file path> <truncate size(bytes)>\n");
+        exit(EXIT_FAILURE);
+    }
 
-    private:
-        pthread_mutex_t* const auto_mutex;
-        bool is_lock_acquired;
+    const char* filepath = argv[1];
+    auto        size     = static_cast<off_t>(strtoull(argv[2], nullptr, 10));
 
-    private:
-        AutoLock(const AutoLock&);
+    if(0 != truncate(filepath, size)){
+        fprintf(stderr, "[ERROR] Could not truncate file(%s) to %lld byte.\n", filepath, static_cast<long long>(size));
+        exit(EXIT_FAILURE);
+    }
 
-    public:
-        explicit AutoLock(pthread_mutex_t* pmutex, Type type = NONE);
-        ~AutoLock();
-        bool isLockAcquired() const;
-};
-
-#endif // S3FS_AUTOLOCK_H_
+    exit(EXIT_SUCCESS);
+}
 
 /*
 * Local variables:
